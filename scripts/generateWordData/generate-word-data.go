@@ -38,7 +38,7 @@ func makeTrieNode(char rune) *TrieNode {
 }
 
 func main() {
-	wordFileContents, err := os.ReadFile("word-lists/en.txt")
+	wordFileContents, err := os.ReadFile("word-lists/en/words.txt")
 	check(err)
 
 	words := strings.Split(string(wordFileContents), "\n")
@@ -46,6 +46,31 @@ func main() {
 	fmt.Println("Read in", len(words), "words")
 
 	letterSets := make(map[string]bool)
+
+	panagramFileContents, err := os.ReadFile("word-lists/en/panagrams.txt")
+	check(err)
+
+	panagrams := strings.Split(string(panagramFileContents), "\n")
+
+	// Construct our letter sets from the curated list of valid panagrams (words with 7 unique letters)
+	for _, panagram := range panagrams {
+		uniqueCharSet := make(map[rune]bool)
+
+		for _, char := range panagram {
+			uniqueCharSet[char] = true
+		}
+
+		uniqueCharKeys := getMapKeys(uniqueCharSet)
+
+		sort.Slice(uniqueCharKeys, func(i, j int) bool {
+			return uniqueCharKeys[i] < uniqueCharKeys[j]
+		})
+
+		for i := 0; i < len(uniqueCharKeys)-1; i++ {
+			letterSet := string(uniqueCharKeys) + string(unicode.ToUpper(uniqueCharKeys[i])) + string(uniqueCharKeys[i+1:])
+			letterSets[letterSet] = true
+		}
+	}
 
 	// Create a Trie to store all valid words in a way that's quicker to look up
 	// when trying to find which words belong to a letter set
@@ -64,23 +89,9 @@ func main() {
 
 		uniqueCharKeys := getMapKeys(uniqueCharSet)
 
-		i := 0
-		for char := range uniqueCharSet {
-			uniqueCharKeys[i] = char
-			i++
-		}
-
 		sort.Slice(uniqueCharKeys, func(i, j int) bool {
 			return uniqueCharKeys[i] < uniqueCharKeys[j]
 		})
-
-		if len(uniqueCharKeys) == 7 {
-			for i := 0; i < 7; i++ {
-				// Add each permutation of the letter set where one of the letters is capitalized to indicate it's the center letter
-				letterSet := string(uniqueCharKeys[:i]) + string(unicode.ToUpper(uniqueCharKeys[i])) + string(uniqueCharKeys[i+1:])
-				letterSets[letterSet] = true
-			}
-		}
 
 		currentTrieNode := trie
 		for _, char := range uniqueCharKeys {

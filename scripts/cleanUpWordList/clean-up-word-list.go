@@ -29,12 +29,13 @@ func getMapKeys[K comparable, V any](m map[K]V) []K {
  * This script takes a messy word list manually assembled from SCOWL (http://wordlist.aspell.net/)
  * and ouputs a sanitized word list with duplicates and invalid words removed
  */
-func main(){
-	messyWordFileContents, err := os.ReadFile("word-lists/en-messy.txt")
+func main() {
+	messyWordFileContents, err := os.ReadFile("word-lists/en/words.txt")
 	check(err)
 
 	messyWords := strings.Split(string(messyWordFileContents), "\n")
 
+	validPanagramMap := make(map[string]bool)
 	validWordMap := make(map[string]bool)
 
 	for _, word := range messyWords {
@@ -51,11 +52,25 @@ func main(){
 			}
 		}
 
+		if isInvalidWord {
+			continue
+		}
+
 		lowerCaseWord := strings.ToLower(word)
 
-		if !isInvalidWord {
-			validWordMap[lowerCaseWord] = true
+		uniqueCharSet := make(map[rune]bool)
+
+		for _, char := range lowerCaseWord {
+			uniqueCharSet[char] = true
 		}
+
+		uniqueCharKeys := getMapKeys(uniqueCharSet)
+
+		if len(uniqueCharKeys) == 7 {
+			validPanagramMap[lowerCaseWord] = true
+		}
+
+		validWordMap[lowerCaseWord] = true
 	}
 
 	fmt.Println("Filtered to", len(validWordMap), "words")
@@ -63,8 +78,16 @@ func main(){
 	validWords := getMapKeys(validWordMap)
 	sort.Strings(validWords)
 
-	validWordFile, err := os.Create("word-lists/en-clean.txt")
+	validWordFile, err := os.Create("word-lists/en/words-clean.txt")
 	check(err)
-
 	validWordFile.WriteString(strings.Join(validWords, "\n"))
+	validWordFile.Close()
+
+	panagramWordFile, err := os.Create("word-lists/en/panagrams-clean.txt")
+	check(err)
+	panagrams := getMapKeys(validPanagramMap)
+	sort.Strings(panagrams)
+	panagramWordFile.WriteString(strings.Join(panagrams, "\n"))
+	panagramWordFile.Close()
+
 }

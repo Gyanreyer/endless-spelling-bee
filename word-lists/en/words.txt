@@ -4,8 +4,6 @@ aback
 abacus
 abacuses
 abaft
-abalone
-abalones
 abandon
 abandoned
 abandoning
@@ -321,8 +319,6 @@ academia
 academic
 academical
 academically
-academician
-academicians
 academics
 academies
 academy
@@ -67480,8 +67476,6 @@ swearer
 swearers
 swearing
 swears
-swearword
-swearwords
 sweat
 sweatband
 sweatbands
@@ -67667,6 +67661,7 @@ sycophancy
 sycophant
 sycophantic
 sycophants
+syllabi
 syllabic
 syllabicate
 syllabicated
@@ -67687,7 +67682,6 @@ syllables
 syllabub
 syllabubs
 syllabus
-syllabuses
 syllogism
 syllogisms
 syllogistic
@@ -70972,7 +70966,6 @@ trice
 tricentennial
 tricentennials
 triceps
-tricepses
 triceratops
 trichina
 trichinae
@@ -71273,8 +71266,6 @@ trudges
 trudging
 true
 trued
-truelove
-trueloves
 truer
 trues
 truest
@@ -73902,7 +73893,6 @@ urchin
 urchins
 urea
 uremia
-uremias
 uremic
 ureter
 ureters
@@ -74326,8 +74316,6 @@ vegetative
 vegged
 vegges
 veggie
-veggieburger
-veggieburgers
 veggies
 vegging
 vehemence
@@ -74798,8 +74786,6 @@ violently
 violet
 violets
 violin
-violincello
-violincellos
 violinist
 violinists
 violins
@@ -75309,7 +75295,6 @@ walkaways
 walked
 walker
 walkers
-walkies
 walking
 walkout
 walkouts
@@ -75401,7 +75386,6 @@ wanted
 wanting
 wanton
 wantoned
-wantoning
 wantonly
 wantonness
 wantons
@@ -76005,8 +75989,6 @@ westernmost
 westerns
 westward
 westwards
-wetback
-wetbacks
 wetland
 wetlands
 wetly
@@ -76345,13 +76327,6 @@ whopper
 whoppers
 whopping
 whops
-whore
-whorehouse
-whorehouses
-whoreish
-whores
-whoring
-whorish
 whorl
 whorled
 whorls
