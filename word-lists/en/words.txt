@@ -64509,7 +64509,6 @@ splints
 split
 splits
 splitting
-splittings
 splodge
 splodges
 splosh
@@ -64912,7 +64911,6 @@ squiggly
 squint
 squinted
 squinter
-squintest
 squinting
 squints
 squire
@@ -65233,7 +65231,6 @@ stateliest
 stateliness
 stately
 statement
-statemented
 statementing
 statements
 stater
@@ -65750,8 +65747,6 @@ stoniest
 stonily
 stoniness
 stoning
-stonkered
-stonking
 stony
 stood
 stooge

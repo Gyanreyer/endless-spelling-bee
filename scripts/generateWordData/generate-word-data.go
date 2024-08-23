@@ -67,7 +67,7 @@ func main() {
 		})
 
 		for i := 0; i < len(uniqueCharKeys)-1; i++ {
-			letterSet := string(uniqueCharKeys) + string(unicode.ToUpper(uniqueCharKeys[i])) + string(uniqueCharKeys[i+1:])
+			letterSet := string(uniqueCharKeys[:i]) + string(unicode.ToUpper(uniqueCharKeys[i])) + string(uniqueCharKeys[i+1:])
 			letterSets[letterSet] = true
 		}
 	}
