@@ -1,5 +1,19 @@
 <main webc:root="override">
-  <guess-notifications></guess-notifications>
+  <notification-list></notification-list>
   <letter-form></letter-form>
   <win-modal></win-modal>
+  <div class="confetti-wrapper">
+    <canvas id="panagram-confetti" class="confetti"></canvas>
+  </div>
 </main>
+<style>
+  .confetti-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    z-index: 20;
+    pointer-events: none;
+  }
+</style>

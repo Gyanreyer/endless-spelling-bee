@@ -61,5 +61,8 @@ meta:
     <script :src="getBundleFileUrl('js')" type="module" webc:keep></script>
 
     <script src="./js/fireConfetti.mjs"></script>
+
+    <script src="./js/notification-list.mjs"></script>
+    <script src="./js/notification-list-item.mjs"></script>
   </body>
 </html>

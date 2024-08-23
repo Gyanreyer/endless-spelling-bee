@@ -1,4 +1,8 @@
-const cacheName = "open-spelling-bee-1.4.3";
+/// <reference lib="webworker" />
+// @ts-nocheck - TypeScript is garbage and has no idea what to do with
+// service workers, so we're disabling type checking for this file
+
+const cacheName = "open-spelling-bee-1.4.9";
 
 const wordDataPathname = "/words/en";
 
@@ -88,6 +92,11 @@ self.addEventListener("fetch", (e) => {
     return e.respondWith(handleWordDataRequest(requestURL));
   }
 
+  if (requestURL.hostname === "localhost") {
+    // Skip caching of localhost requests
+    return e.respondWith(fetch(e.request));
+  }
+
   // Auto-cache all other requests
   e.respondWith(
     caches.open(cacheName).then((cache) =>
@@ -125,9 +134,12 @@ async function handleWordDataRequest(requestURL) {
   requestURL.searchParams.set("t", dateTimestamp);
 
   const cache = await caches.open(cacheName);
-  const cachedResponse = await cache.match(requestURL);
-  if (cachedResponse) {
-    return cachedResponse;
+  // Skip cache for localhost requests
+  if (requestURL.hostname !== "localhost") {
+    const cachedResponse = await cache.match(requestURL);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
   }
 
   let cachedWordDataCompressedResponse = await cache.match("/words/en.json.gz");
@@ -197,7 +209,7 @@ async function handleWordDataRequest(requestURL) {
   }
 
   if (centerLetter === null) {
-    return Response.error();
+    return Response.error(new Error("No center letter found"));
   }
 
   const validWordIndices = letterSetWordIndices[letterSetIndex];

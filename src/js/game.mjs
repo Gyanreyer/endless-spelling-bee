@@ -398,24 +398,36 @@ Alpine.store("game", {
       if (isPanagram) {
         window.fireConfetti("panagram-confetti");
 
-        this.showNotification({
-          class: "valid-guess gradient-bg panagram",
-          message: `Panagram! +${score}`,
-          ariaLabel: `${sanitizedWord} is a panagram. Good job! +${score} points.`,
-        });
+        document.dispatchEvent(
+          new CustomEvent("osb:notify", {
+            detail: {
+              status: "success",
+              message: `Panagram! +${score}`,
+              ariaLabel: `${sanitizedWord} is a panagram. Good job! +${score} points.`,
+            },
+          })
+        );
       } else {
-        this.showNotification({
-          class: "valid-guess gradient-bg",
-          message: `+${score}`,
-          ariaLabel: `Correct! +${score} points.`,
-        });
+        document.dispatchEvent(
+          new CustomEvent("osb:notify", {
+            detail: {
+              status: "success",
+              message: `+${score}`,
+              ariaLabel: `Correct! +${score} points.`,
+            },
+          })
+        );
       }
     } else {
-      this.showNotification({
-        class: "invalid-guess",
-        message: reason,
-        ariaLabel: reason,
-      });
+      document.dispatchEvent(
+        new CustomEvent("osb:notify", {
+          detail: {
+            status: "error",
+            message: reason,
+            ariaLabel: reason,
+          },
+        })
+      );
     }
   },
   shuffleOuterLetters() {

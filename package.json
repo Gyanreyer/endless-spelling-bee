@@ -25,6 +25,7 @@
     "csso": "^5.0.5",
     "esbuild": "^0.17.15",
     "html-minifier-terser": "^7.1.0",
+    "typescript": "^5.5.4",
     "workerpool": "^6.4.0"
   }
 }
