@@ -41,18 +41,9 @@ meta:
       onload="this.onload=null;this.rel='stylesheet'"
       webc:keep
     />
-
-    <!-- AlpineJS -->
-    <script
-      :src="getBundleFileUrl('js', 'alpine')"
-      type="module"
-      webc:keep
-    ></script>
-    <script src="./js/game.mjs" webc:bucket="alpine"></script>
   </head>
   <body x-data>
-    <loading-indicator x-show="false"></loading-indicator>
-    <div x-cloak>
+    <div>
       <page-header></page-header>
       <page-main></page-main>
     </div>
@@ -60,9 +51,11 @@ meta:
     <!-- Non-critical JS -->
     <script :src="getBundleFileUrl('js')" type="module" webc:keep></script>
 
-    <script src="./js/fireConfetti.mjs"></script>
+    <script src="./js/game-manager.mjs"></script>
 
     <script src="./js/notification-list.mjs"></script>
     <script src="./js/notification-list-item.mjs"></script>
+    <script src="./js/word-form.mjs"></script>
+    <script src="./js/letter-buttons.mjs"></script>
   </body>
 </html>

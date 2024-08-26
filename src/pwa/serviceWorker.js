@@ -1,8 +1,10 @@
 /// <reference lib="webworker" />
+
 // @ts-nocheck - TypeScript is garbage and has no idea what to do with
 // service workers, so we're disabling type checking for this file
 
 const cacheName = "open-spelling-bee-1.4.9";
+const wordDataCacheName = "open-spelling-bee-words/en-1.0.0";
 
 const wordDataPathname = "/words/en";
 
@@ -13,8 +15,8 @@ self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(cacheName).then((cache) =>
       cache.addAll([
-        "/",
-        "/index.html",
+        // "/",
+        // "/index.html",
         // 3rd party libraries
         "https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/module.esm.js/+esm",
         "https://cdn.jsdelivr.net/npm/@tsparticles/confetti@3.0.3/tsparticles.confetti.bundle.min.js/+esm",
@@ -88,13 +90,15 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  if (requestURL.pathname === wordDataPathname) {
-    return e.respondWith(handleWordDataRequest(requestURL));
-  }
+  if (requestURL.hostname === self.location.hostname) {
+    if (requestURL.pathname === "/" || requestURL.pathname === "/index.html") {
+      return e.respondWith(handlePageRequest(requestURL));
+    }
 
-  if (requestURL.hostname === "localhost") {
-    // Skip caching of localhost requests
-    return e.respondWith(fetch(e.request));
+    if (requestURL.hostname === "localhost") {
+      // Skip caching of localhost requests
+      return e.respondWith(fetch(e.request));
+    }
   }
 
   // Auto-cache all other requests
@@ -114,72 +118,61 @@ self.addEventListener("fetch", (e) => {
 });
 
 /**
- * @param {Event} e
- * @param {URL} requestURL
+ * @param {number} seed
+ * @returns {number}
  */
-async function handleWordDataRequest(requestURL) {
-  /** @type {number} */
-  let date = new Date();
+const seededRandom = (seed) => {
+  var t = seed + 0x6d2b79f5;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
 
-  if (requestURL.searchParams.get("d") === "yesterday") {
-    date.setDate(date.getDate() - 1);
-  }
+async function getWordData() {
+  const cache = await caches.open(wordDataCacheName);
 
-  requestURL.searchParams.delete("d");
+  const cachedUncompressedWordDataResponse = await cache.match(
+    "/words/en.json"
+  );
 
-  // Set the timestamp to midnight of the current day, in UTC
-  // to make sure everyone gets the same words for the day regardless of timezone
-  const dateTimestamp = getDateTimestamp(date);
-
-  requestURL.searchParams.set("t", dateTimestamp);
-
-  const cache = await caches.open(cacheName);
-  // Skip cache for localhost requests
-  if (requestURL.hostname !== "localhost") {
-    const cachedResponse = await cache.match(requestURL);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-  }
-
-  let cachedWordDataCompressedResponse = await cache.match("/words/en.json.gz");
-
-  if (!cachedWordDataCompressedResponse) {
-    cachedWordDataCompressedResponse = await fetch("/words/en.json.gz");
-    await cache.put(
-      "/words/en.json.gz",
-      cachedWordDataCompressedResponse.clone()
-    );
+  if (cachedUncompressedWordDataResponse) {
+    return cachedUncompressedWordDataResponse;
   }
 
   /** @type {string} */
   let fullWordDataJSONString = "";
 
-  await cachedWordDataCompressedResponse.body
+  // @ts-ignore
+  const stream = (await fetch("/words/en.json.gz")).body
     .pipeThrough(new DecompressionStream("gzip"))
-    .pipeThrough(new TextDecoderStream())
-    .pipeTo(
-      new WritableStream({
-        write(chunk) {
-          fullWordDataJSONString += chunk;
-        },
-      })
-    );
+    .pipeThrough(new TextDecoderStream());
 
-  const fullWordData = JSON.parse(fullWordDataJSONString);
+  const reader = stream.getReader();
+  try {
+    /** @type {Awaited<ReturnType<typeof reader.read>>} */
+    let readResult;
+    while (!(readResult = await reader.read()).done) {
+      fullWordDataJSONString += readResult.value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
 
-  const [allWords, letterSets, letterSetWordIndices] = fullWordData;
+  const wordDataJSONResponse = new Response(fullWordDataJSONString);
+  await cache.put("/words/en.json", wordDataJSONResponse.clone());
 
-  /**
-   * @param {number} seed
-   * @returns {number}
-   */
-  const seededRandom = (seed) => {
-    var t = seed + 0x6d2b79f5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+  return wordDataJSONResponse;
+}
+
+/**
+ * @param {Date} date
+ */
+async function getWordDataForDate(date) {
+  const dateTimestamp = getDateTimestamp(date);
+
+  const [allWords, letterSets, letterSetWordIndices] = await getWordData().then(
+    (res) => res.json()
+  );
 
   const letterSetIndex = Math.floor(
     seededRandom(Number(dateTimestamp)) * letterSets.length
@@ -209,25 +202,88 @@ async function handleWordDataRequest(requestURL) {
   }
 
   if (centerLetter === null) {
-    return Response.error(new Error("No center letter found"));
+    throw new Error("No center letter found");
   }
 
   const validWordIndices = letterSetWordIndices[letterSetIndex];
 
+  /**
+   * @type {string[]}
+   */
   const validWords = new Array(validWordIndices.length);
   for (let i = 0; i < validWordIndices.length; ++i) {
     validWords[i] = allWords[validWordIndices[i]];
   }
 
-  const todayWordData = {
-    ts: dateTimestamp,
+  return {
+    timestamp: dateTimestamp,
     centerLetter,
     outerLetters,
     validWords,
   };
+}
 
-  const response = new Response(JSON.stringify(todayWordData));
+/**
+ * @param {URL} requestURL
+ * @returns
+ */
+async function handlePageRequest(requestURL) {
+  // Set the timestamp to midnight of the current day, in UTC
+  // to make sure everyone gets the same words for the day regardless of timezone
+  const date = new Date();
+  const dateTimestamp = getDateTimestamp(date);
 
-  cache.put(requestURL, response.clone());
-  return response;
+  const cache = await caches.open(cacheName);
+
+  const todayPageResponseURL = new URL(requestURL);
+  todayPageResponseURL.searchParams.set("t", dateTimestamp);
+
+  const cachedTodayPageResponse = await cache.match(todayPageResponseURL);
+  if (requestURL.hostname !== "localhost" && cachedTodayPageResponse) {
+    return cachedTodayPageResponse;
+  }
+
+  let basePageHTMLResponse = await cache.match(requestURL);
+  if (!basePageHTMLResponse || requestURL.hostname === "localhost") {
+    basePageHTMLResponse = await fetch(requestURL);
+    cache.put(requestURL, basePageHTMLResponse.clone());
+  }
+
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+
+  const [todayWordData, yesterdayWordData] = await Promise.all([
+    getWordDataForDate(date),
+    getWordDataForDate(yesterdayDate),
+  ]);
+
+  let pageHTML = await basePageHTMLResponse.text();
+
+  const headIndex = pageHTML.indexOf("</head>");
+  const letterButtonsIndex = pageHTML.indexOf("</letter-buttons");
+
+  // Inject a script to expose the game data for today and yesterday to the client,
+  // and pre-render letter buttons
+  pageHTML = `${pageHTML.slice(0, headIndex)}
+  <script>
+    window.__GAME_DATA__ = {
+      today: ${JSON.stringify(todayWordData)},
+      yesterday: ${JSON.stringify(yesterdayWordData)},
+    };
+  </script>
+  ${pageHTML.slice(headIndex, letterButtonsIndex)}${todayWordData.outerLetters
+    .concat(todayWordData.centerLetter)
+    .reduce(
+      (buttonsHTML, letter) =>
+        (buttonsHTML += `<button type="button" class="${
+          letter === todayWordData.centerLetter ? "center" : "outer"
+        }">${letter}</button>`),
+      ""
+    )}${pageHTML.slice(letterButtonsIndex)}`;
+
+  const todayPageResponse = new Response(pageHTML, {
+    headers: basePageHTMLResponse.headers,
+  });
+  cache.put(todayPageResponseURL, todayPageResponse.clone());
+  return todayPageResponse;
 }

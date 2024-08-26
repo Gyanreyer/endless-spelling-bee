@@ -1,16 +1,5 @@
 class NotificationListItem extends HTMLElement {
   /**
-   * @type {HTMLTemplateElement}
-   */
-  static TEMPLATE;
-  /**
-   * @type {CSSStyleSheet}
-   */
-  static STYLESHEET;
-
-  static LEAVE_TRANSITION_DURATION = 300;
-
-  /**
    * @type {number | null}
    */
   #hideTimeoutID = null;
@@ -18,78 +7,8 @@ class NotificationListItem extends HTMLElement {
   constructor() {
     super();
 
-    if (!NotificationListItem.TEMPLATE) {
-      NotificationListItem.TEMPLATE = document.createElement("template");
-      NotificationListItem.TEMPLATE.innerHTML = /* html */ `<slot>`;
-    }
-    if (!NotificationListItem.STYLESHEET) {
-      NotificationListItem.STYLESHEET = new CSSStyleSheet();
-      NotificationListItem.STYLESHEET.replaceSync(/* css */ `
-:host {
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 50%;
-  --base-translate-y: calc(var(--i) * 120%);
-  transform: translate(-50%, var(--base-translate-y));
-  transition: transform 0.3s;
-  margin: 0 auto;
-  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.25);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  z-index: 10;
-  white-space: nowrap;
-}
-
-:host([data-status=success]) {
-  background-image: var(--gradient);
-  color: white;
-}
-
-:host([data-status=error]) {
-  background-color: var(--yellow);
-  color: var(--black);
-}
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translate(-50%, var(--base-translate-y));
-  }
-  25% {
-    transform: translate(-53%, var(--base-translate-y));
-  }
-  75% {
-    transform: translate(-47%, var(--base-translate-y));
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  :host([data-status=success][data-trans=enter]) {
-    opacity: 0;
-    transform: translate(-50%, calc(var(--base-translate-y) + 25%));
-    transition: opacity 0.3s, transform 0.3s;
-  }
-
-  :host([data-status=error]) {
-    animation: shake 0.2s linear;
-  }
-
-  :host([data-trans=leave]) {
-    opacity: 0;
-    transform: translate(-50%, calc(var(--base-translate-y) + 25%));
-    transition-property: opacity, transform;
-    transition-duration: ${NotificationListItem.LEAVE_TRANSITION_DURATION}ms;
-  }
-}
-`);
-    }
-
     const shadowRoot = this.attachShadow({ mode: "open" });
-    shadowRoot.appendChild(
-      NotificationListItem.TEMPLATE.content.cloneNode(true)
-    );
-    shadowRoot.adoptedStyleSheets = [NotificationListItem.STYLESHEET];
+    shadowRoot.appendChild(document.createElement("slot"));
   }
 
   connectedCallback() {
@@ -100,6 +19,11 @@ class NotificationListItem extends HTMLElement {
       this.remove();
       return;
     }
+
+    this.dataset.trans = "enter";
+
+    this.role = "alert";
+    this.ariaLive = "polite";
 
     requestAnimationFrame(() => {
       delete this.dataset.trans;
@@ -117,9 +41,13 @@ class NotificationListItem extends HTMLElement {
         new Event("osb:notification-dismissed")
       );
 
-      window.setTimeout(() => {
-        this.remove();
-      }, 300);
+      window.setTimeout(
+        () => {
+          this.remove();
+        },
+        // Match the transition duration for leave animations
+        300
+      );
     }, aliveTime);
   }
 

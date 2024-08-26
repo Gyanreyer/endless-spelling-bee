@@ -1,6 +1,6 @@
 <main webc:root="override">
   <notification-list></notification-list>
-  <letter-form></letter-form>
+  <word-form></word-form>
   <win-modal></win-modal>
   <div class="confetti-wrapper">
     <canvas id="panagram-confetti" class="confetti"></canvas>
@@ -15,5 +15,70 @@
     height: 40%;
     z-index: 20;
     pointer-events: none;
+  }
+
+  notification-list {
+    display: block;
+    position: relative;
+    height: 2rem;
+    margin: 1rem auto;
+  }
+
+  notification-list-item {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    --base-translate-y: calc(var(--i) * 120%);
+    transform: translate(-50%, var(--base-translate-y));
+    transition: transform 0.3s;
+    margin: 0 auto;
+    box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.25);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    z-index: 10;
+    white-space: nowrap;
+  }
+
+  notification-list-item[data-status="success"] {
+    background-image: var(--gradient);
+    color: white;
+  }
+
+  notification-list-item[data-status="error"] {
+    background-color: var(--yellow);
+    color: var(--black);
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translate(-50%, var(--base-translate-y));
+    }
+    25% {
+      transform: translate(-53%, var(--base-translate-y));
+    }
+    75% {
+      transform: translate(-47%, var(--base-translate-y));
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    notification-list-item[data-status="success"][data-trans="enter"] {
+      opacity: 0;
+      transform: translate(-50%, calc(var(--base-translate-y) + 25%));
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    notification-list-item[data-status="error"] {
+      animation: shake 0.2s linear;
+    }
+
+    notification-list-item[data-trans="leave"] {
+      opacity: 0;
+      transform: translate(-50%, calc(var(--base-translate-y) + 25%));
+      transition-property: opacity, transform;
+      transition-duration: 0.3s;
+    }
   }
 </style>

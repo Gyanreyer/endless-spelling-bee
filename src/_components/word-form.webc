@@ -1,0 +1,86 @@
+<form>
+  <input id="guess-input" type="text" name="word" required minlength="4" />
+  <letter-buttons></letter-buttons>
+  <button type="submit">Enter</button>
+</form>
+<style>
+  letter-buttons {
+    margin: 2rem auto;
+    display: block;
+    position: relative;
+    --button-wrapper-size: 60vw;
+    --button-wrapper-max-size: 20rem;
+    width: var(--button-wrapper-size);
+    max-width: var(--button-wrapper-max-size);
+    aspect-ratio: 1;
+
+    /* Button widths are the wrapper's width / 2.5 */
+    --button-size: 24vw;
+    --button-max-size: 8rem;
+  }
+
+  letter-buttons button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    --translate-x: -50%;
+    --translate-y: -50%;
+    --scale: 0.925;
+    transform: translate(var(--translate-x), var(--translate-y))
+      scale(var(--scale));
+
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    font-weight: 600;
+    font-size: 1.4rem;
+
+    border: none;
+    text-transform: uppercase;
+
+    width: var(--button-size);
+    max-width: var(--button-max-size);
+    aspect-ratio: 1.15;
+
+    transition-property: transform, opacity;
+    transition-duration: 0.2s;
+
+    background: var(--gray);
+  }
+
+  letter-buttons button:active {
+    --scale: 0.85;
+    opacity: 0.8;
+  }
+
+  letter-buttons button.center {
+    background-image: var(--gradient);
+    color: white;
+  }
+
+  letter-buttons button.outer:nth-of-type(1) {
+    --translate-y: -150%;
+  }
+
+  letter-buttons button.outer:nth-of-type(2) {
+    --translate-x: -125%;
+    --translate-y: -100%;
+  }
+
+  letter-buttons button.outer:nth-of-type(3) {
+    --translate-x: 25%;
+    --translate-y: -100%;
+  }
+
+  letter-buttons button.outer:nth-of-type(4) {
+    --translate-x: -125%;
+    --translate-y: 0%;
+  }
+
+  letter-buttons button.outer:nth-of-type(5) {
+    --translate-x: 25%;
+    --translate-y: 0%;
+  }
+
+  letter-buttons button.outer:nth-of-type(6) {
+    --translate-y: 50%;
+  }
+</style>
