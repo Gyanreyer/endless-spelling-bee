@@ -1,7 +1,3 @@
-/**
- * @import { NotificationData } from './game-manager.mjs';
- */
-
 class NotificationList extends HTMLElement {
   constructor() {
     super();

@@ -29,10 +29,12 @@ self.addEventListener("install", (e) => {
  * @param {Date} date
  */
 const getDateTimestamp = (date) =>
-  `${date.getFullYear()}${date.getMonth().toString().padStart(2, "0")}${date
-    .getDate()
-    .toString()
-    .padStart(2, "0")}`;
+  Number(
+    `${date.getFullYear()}${date.getMonth().toString().padStart(2, "0")}${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}`
+  );
 
 self.addEventListener("activate", (e) => {
   // Claim all clients immediately, so the service worker can control
@@ -165,17 +167,15 @@ async function getWordData() {
 }
 
 /**
- * @param {Date} date
+ * @param  {[string[], string[], number[][]]} wordData
+ * @param {number} dateTimestamp
  */
-async function getWordDataForDate(date) {
-  const dateTimestamp = getDateTimestamp(date);
-
-  const [allWords, letterSets, letterSetWordIndices] = await getWordData().then(
-    (res) => res.json()
-  );
-
+function getWordDataForDate(
+  [allWords, letterSets, letterSetWordIndices],
+  dateTimestamp
+) {
   const letterSetIndex = Math.floor(
-    seededRandom(Number(dateTimestamp)) * letterSets.length
+    seededRandom(dateTimestamp) * letterSets.length
   );
 
   /** @type {string} */
@@ -230,13 +230,17 @@ async function getWordDataForDate(date) {
 async function handlePageRequest(requestURL) {
   // Set the timestamp to midnight of the current day, in UTC
   // to make sure everyone gets the same words for the day regardless of timezone
-  const date = new Date();
-  const dateTimestamp = getDateTimestamp(date);
+  const todayDate = new Date();
+  const todayTimestamp = getDateTimestamp(todayDate);
+
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(todayDate.getDate() - 1);
+  const yesterdayTimestamp = getDateTimestamp(yesterdayDate);
 
   const cache = await caches.open(cacheName);
 
   const todayPageResponseURL = new URL(requestURL);
-  todayPageResponseURL.searchParams.set("t", dateTimestamp);
+  todayPageResponseURL.searchParams.set("t", String(todayTimestamp));
 
   const cachedTodayPageResponse = await cache.match(todayPageResponseURL);
   if (requestURL.hostname !== "localhost" && cachedTodayPageResponse) {
@@ -249,35 +253,50 @@ async function handlePageRequest(requestURL) {
     cache.put(requestURL, basePageHTMLResponse.clone());
   }
 
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-
-  const [todayWordData, yesterdayWordData] = await Promise.all([
-    getWordDataForDate(date),
-    getWordDataForDate(yesterdayDate),
+  let [[todayWordData, yesterdayWordData], pageHTML] = await Promise.all([
+    getWordData()
+      .then((res) => res.json())
+      .then((wordData) =>
+        Promise.all([
+          getWordDataForDate(wordData, todayTimestamp),
+          getWordDataForDate(wordData, yesterdayTimestamp),
+        ])
+      ),
+    cache
+      .match(requestURL)
+      .then(
+        (cachedRes) =>
+          cachedRes ??
+          fetch(requestURL).then((res) => {
+            cache.put(requestURL, res.clone());
+            return res;
+          })
+      )
+      .then((res) => res.text()),
   ]);
-
-  let pageHTML = await basePageHTMLResponse.text();
 
   const headIndex = pageHTML.indexOf("</head>");
   const letterButtonsIndex = pageHTML.indexOf("</letter-buttons");
+  const previousGuessListIndex = pageHTML.indexOf("</previous-guess-list");
 
   // Inject a script to expose the game data for today and yesterday to the client,
-  // and pre-render letter buttons
-  pageHTML = `${pageHTML.slice(0, headIndex)}
-  <script>
+  // and pre-render guess list and letter buttons
+  pageHTML = `${pageHTML.slice(0, headIndex)}<script>
     window.__GAME_DATA__ = {
       today: ${JSON.stringify(todayWordData)},
       yesterday: ${JSON.stringify(yesterdayWordData)},
     };
-  </script>
-  ${pageHTML.slice(headIndex, letterButtonsIndex)}${todayWordData.outerLetters
+  </script>${pageHTML.slice(
+    headIndex,
+    letterButtonsIndex
+  )}${todayWordData.outerLetters
     .concat(todayWordData.centerLetter)
     .reduce(
       (buttonsHTML, letter) =>
-        (buttonsHTML += `<button type="button" class="${
+        buttonsHTML +
+        `<button type="button" class="${
           letter === todayWordData.centerLetter ? "center" : "outer"
-        }">${letter}</button>`),
+        }">${letter}</button>`,
       ""
     )}${pageHTML.slice(letterButtonsIndex)}`;
 

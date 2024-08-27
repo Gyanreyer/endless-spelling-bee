@@ -21,9 +21,9 @@ for (let i = localStorage.length - 1; i >= 0; --i) {
 /**
  * @type {Set<string>}
  */
-const correctGuessWordsSet = new Set(
+const correctGuessedWordsSet = new Set(
   // Initialize with any saved guesses from today
-  JSON.parse(localStorage.getItem(todayLocalStorageKey) ?? "[]")
+  await window.getGuessesFromDB()
 );
 
 /**
@@ -116,7 +116,7 @@ document.addEventListener("osb:guess", (evt) => {
       message = "Word must be at least 4 letters long.";
     } else if (!guess.includes(window.__GAME_DATA__.today.centerLetter)) {
       message = "Word must include the center letter.";
-    } else if (guess.split("").some((letter) => outerLetterSet.has(letter))) {
+    } else if (!guess.split("").some((letter) => outerLetterSet.has(letter))) {
       message = "Word must only include the provided letters";
     }
 
@@ -124,22 +124,28 @@ document.addEventListener("osb:guess", (evt) => {
       message,
       status: "error",
     };
-  } else if (correctGuessWordsSet.has(guess)) {
+  } else if (correctGuessedWordsSet.has(guess)) {
     notificationData = {
       message: `You've already guessed that word.`,
       status: "error",
     };
   } else {
     // Correct guess!
-    correctGuessWordsSet.add(guess);
+    correctGuessedWordsSet.add(guess);
 
-    // Write the updated correct guesses to localStorage
-    localStorage.setItem(
-      todayLocalStorageKey,
-      JSON.stringify(Array.from(correctGuessWordsSet))
-    );
+    window.saveGuessToDB(guess);
 
     const { score, isPanagram } = getWordScore(guess);
+
+    document.dispatchEvent(
+      new CustomEvent("osb:correct-guess", {
+        detail: {
+          word: guess,
+          score,
+          isPanagram,
+        },
+      })
+    );
 
     let message = `+${score}`;
     if (isPanagram) {
@@ -164,6 +170,10 @@ const confettiPromise = import(
   // @ts-ignore
   "https://cdn.jsdelivr.net/npm/@tsparticles/confetti@3.0.3/tsparticles.confetti.bundle.min.js/+esm"
 );
+/**
+ * @type {any}
+ */
+let confettiModule = null;
 
 /**
  * @type {Map<HTMLCanvasElement, (options: {
@@ -186,7 +196,7 @@ const randomInRange = (min, max) => Math.random() * (max - min) + min;
  */
 async function fireConfetti(canvasID) {
   try {
-    const confettiModule = await confettiPromise;
+    confettiModule = confettiModule ?? (await confettiPromise);
 
     const confetti = confettiModule.default.confetti;
     const canvas = document.getElementById(canvasID);
@@ -196,8 +206,8 @@ async function fireConfetti(canvasID) {
     }
 
     const confettiCallback =
-      (await canvasConfettiCallbacks.get(canvas)) ||
-      confetti.create(canvas).then(
+      canvasConfettiCallbacks.get(canvas) ||
+      (await confetti.create(canvas).then(
         /**
          * @param {(options: {
          *  angle: number;
@@ -210,7 +220,7 @@ async function fireConfetti(canvasID) {
           canvasConfettiCallbacks.set(canvas, cb);
           return cb;
         }
-      );
+      ));
 
     confettiCallback({
       angle: randomInRange(75, 105),

@@ -1,0 +1,40 @@
+<previous-guess-list webc:root role="list"></previous-guess-list>
+<script>
+  class PreviousGuessList extends HTMLElement {
+    constructor() {
+      super();
+
+      window.getGuessesFromDB().then((guesses) => {
+        for (const guess of guesses) {
+          this.addGuess(guess);
+        }
+      });
+
+      document.addEventListener(
+        "osb:correct-guess",
+        /**
+         * @param {CustomEvent<{
+         *  word: string;
+         *  isPanagram: boolean;
+         *  score: number;
+         * }>} event
+         */
+        (event) => {
+          this.addGuess(event.detail.word);
+        }
+      );
+    }
+
+    /**
+     * @param {string} word
+     */
+    addGuess(word) {
+      const guessElement = document.createElement("li");
+      guessElement.textContent = word;
+      // Use prepend since newer words should be shown first
+      this.prepend(guessElement);
+    }
+  }
+
+  window.customElements.define("previous-guess-list", PreviousGuessList);
+</script>

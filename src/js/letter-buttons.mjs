@@ -1,4 +1,9 @@
 export class LetterButtons extends HTMLElement {
+  /**
+   * @type {HTMLButtonElement | null}
+   */
+  shuffleButton = null;
+
   constructor() {
     super();
 
@@ -7,6 +12,21 @@ export class LetterButtons extends HTMLElement {
 
     this.onButtonClick = this.onButtonClick.bind(this);
     this.addEventListener("click", this.onButtonClick);
+
+    this.shuffle = this.shuffle.bind(this);
+    const shuffleButton = document.getElementById("shuffle-button");
+    if (!(shuffleButton instanceof HTMLButtonElement)) {
+      throw new Error("shuffle-button element not found");
+    }
+
+    this.shuffleButton = shuffleButton;
+  }
+
+  connectedCallback() {
+    this.shuffleButton?.addEventListener("click", this.shuffle);
+  }
+  disconnectedCallback() {
+    this.shuffleButton?.removeEventListener("click", this.shuffle);
   }
 
   shuffle() {
@@ -29,14 +49,11 @@ export class LetterButtons extends HTMLElement {
    * @param {Event} event
    */
   onButtonClick(event) {
-    console.log(event.target);
-
     const button = event.target;
     if (!(button instanceof HTMLButtonElement)) {
       return;
     }
     const letter = button.textContent;
-    console.log(letter);
 
     document.dispatchEvent(
       new CustomEvent("osb:letter-click", {

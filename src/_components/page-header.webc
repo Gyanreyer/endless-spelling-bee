@@ -1,11 +1,30 @@
 <header webc:root="override">
   <current-score></current-score>
-  <previous-guesses></previous-guesses>
+  <button type="button">
+    <previous-guess-list></previous-guess-list>
+  </button>
 </header>
 <style webc:scoped>
   :host {
     width: 100%;
     max-width: 25rem;
     margin: 0 auto;
+  }
+
+  previous-guess-list {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    list-style: none;
+  }
+
+  previous-guess-list li {
+    display: inline;
+  }
+
+  previous-guess-list li:not(:last-child)::after {
+    content: ",";
+    margin-inline-end: 0.5ch;
   }
 </style>

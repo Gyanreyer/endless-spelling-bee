@@ -28,6 +28,7 @@ meta:
         window.location.reload();
       }
     </script>
+    <script src="./js/guess-db.mjs" webc:bucket="critical"></script>
 
     <style @raw="getBundle('css', 'critical')" webc:keep></style>
 
@@ -42,20 +43,16 @@ meta:
       webc:keep
     />
   </head>
-  <body x-data>
-    <div>
-      <page-header></page-header>
-      <page-main></page-main>
-    </div>
+  <body>
+    <page-header></page-header>
+    <page-main></page-main>
 
     <!-- Non-critical JS -->
     <script :src="getBundleFileUrl('js')" type="module" webc:keep></script>
 
-    <script src="./js/game-manager.mjs"></script>
-
     <script src="./js/notification-list.mjs"></script>
     <script src="./js/notification-list-item.mjs"></script>
-    <script src="./js/word-form.mjs"></script>
     <script src="./js/letter-buttons.mjs"></script>
+    <script src="./js/game-manager.mjs"></script>
   </body>
 </html>
